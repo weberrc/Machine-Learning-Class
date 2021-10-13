@@ -1,0 +1,98 @@
+###########################################################
+# Machine Learning Section 2.2: Conditional Probability
+# Rachel Weber
+# Created: 2 12 2021
+# HarvardX PH125.8x
+##########################################################
+
+# P(+|Disease) = .85
+# P(-|Healthy) = .90
+# P(Disease) = .02
+# P(Healthy) = .98
+
+
+
+set.seed(1)
+
+# create "population of people with/without disease
+disease <- sample(c(0,1), size = 1e6, replace = TRUE, prob = c(0.98,0.02))
+
+# create vector of NAs equal to length of "population"
+test <- rep(NA, 1e6)
+
+# for everyone without disease, test them
+test[disease == 0] <- sample(c(0,1), size = sum(disease == 0), replace = TRUE, prob = c(0.90,0.10))
+
+# notice that person with disease still has NA for their test value
+head(test,100)
+
+# for everyone with disease, test them
+test[disease == 1] <- sample(c(0,1), size = sum(disease == 1), replace = TRUE, prob = c(0.15, 0.85))
+
+# probability that a test is positive
+mean(test)
+
+# probability that an individual has the disease if the test is negative
+mean(disease[test == 0])
+
+# probability of disease if test is positive
+mean(disease[test == 1])
+
+# If a patient's test is positive, by how many times does that increase their risk of having the disease?
+mean(test[disease == 1])
+# .147
+
+.147/.02
+# 7.35 times more likely to have the disease
+
+#########################################################################################
+
+library(dslabs)
+library(tidyverse)
+data("heights")
+
+
+# compute conditional probability for being male by height
+# round height to the nearest inch
+# equation P(x)=P(Male given height = x)
+heights %>% 
+  mutate(height = round(height)) %>%
+  group_by(height) %>%
+  summarize(p = mean(sex == "Male")) %>%
+  qplot(height, p, data =.)
+
+
+# In the plot we just made in Q6 we see high variability for low values of height. 
+# This is because we have few data points. This time use the quantile  0.1,0.2,.,0.9  and the cut() function
+# to assure each group has the same number of points.
+ps <- seq(0, 1, 0.1)
+
+heights %>% 
+  mutate(g = cut(height, quantile(height, ps), include.lowest = TRUE)) %>%
+  group_by(g) %>%
+  summarize(p = mean(sex == "Male"), height = mean(height)) %>%
+  qplot(height, p, data =.)
+
+
+library(MASS)
+
+# generate data from a bivariate normal distribution
+Sigma <- 9*matrix(c(1,0.5,0.5,1), 2, 2)
+
+# mean of 69 for both variables
+# Sigma is covariance matrix
+# n is sample size
+dat <- MASS::mvrnorm(n = 10000, c(69, 69), Sigma) %>%
+  data.frame() %>% 
+  setNames(c("x", "y"))
+
+plot(dat)
+
+# estimate the conditional expectations and make a plot
+ps <- seq(0, 1, 0.1)
+dat %>% 	
+  mutate(g = cut(x, quantile(x, ps), include.lowest = TRUE)) %>%
+  group_by(g) %>%
+  summarize(y = mean(y), x = mean(x)) %>%
+  qplot(x, y, data =.)
+
